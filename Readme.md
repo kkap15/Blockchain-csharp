@@ -9,7 +9,7 @@ This is a 6-weekend project. Each weekend ships a working, demoable milestone. T
 | Weekend | Milestone | Status |
 |---:|---|---|
 | 1 | Blocks, hashing, tamper detection | ✅ |
-| 2 | Proof-of-Work mining | ⬜ |
+| 2 | Proof-of-Work mining | ✅ |
 | 3 | Wallets & signed transactions (ECDSA) | ⬜ |
 | 4 | Mempool & block assembly | ⬜ |
 | 5 | P2P networking & longest-chain rule | ⬜ |

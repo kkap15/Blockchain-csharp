@@ -6,10 +6,12 @@ public sealed class Blockchain
     public IReadOnlyList<Block> Blocks => _blocks;
     public Block Tip => _blocks.Last();
     public int Height => Blocks.Count - 1;
+    public int Difficulty { get; }
     
-    public Blockchain()
+    public Blockchain(int difficulty = 3)
     {
         _blocks = [Block.CreateGenesis()];
+        Difficulty = difficulty;
     }
 
     public Block AddBlock(IEnumerable<string> transactions)
@@ -21,6 +23,7 @@ public sealed class Blockchain
             tip.ComputeHash(),
             transactions
             );
+        Miner.Mine(newBlock, Difficulty);
         _blocks.Add(newBlock);
         return _blocks.Last();
     }
@@ -48,6 +51,7 @@ public sealed class Blockchain
                 return false;
             }
             if (current.PreviousHash != previous.ComputeHash()) return false;
+            if (!Miner.MeetsTarget(current.ComputeHash(), Difficulty)) return false;
         }
         
         return true;
