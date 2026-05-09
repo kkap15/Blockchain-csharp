@@ -1,6 +1,6 @@
 # MiniChain
 
-A blockchain built from scratch in C# / .NET 8 — for learning, not production.
+A blockchain built from scratch in C# / .NET 10 — for learning, not production.
 
 Most "build a blockchain" tutorials are in Python or JavaScript. This one's in C#, partly because it's a language I work in daily and partly because there's surprisingly little material out there for the .NET crowd. The goal is to understand the primitives — hashing, linked blocks, proof-of-work, signed transactions, P2P consensus — by building each one by hand rather than reading about them.
 
