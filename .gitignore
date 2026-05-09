@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+
+# .NET
+*.user
+*.suo
+.vs/
+*.DotSettings.user
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
