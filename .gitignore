@@ -23,3 +23,9 @@ project.fragment.lock.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Wallet persistence
+wallet.json
+
+# Claude
+.claude/
