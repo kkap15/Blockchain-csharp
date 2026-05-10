@@ -10,9 +10,9 @@ This is a 6-weekend project. Each weekend ships a working, demoable milestone. T
 |---:|---|---|
 | 1 | Blocks, hashing, tamper detection | ✅ |
 | 2 | Proof-of-Work mining | ✅ |
-| 3 | Wallets & signed transactions (ECDSA) | ⬜ |
-| 4 | Mempool & block assembly | ⬜ |
-| 5 | P2P networking & longest-chain rule | ⬜ |
+| 3 | Wallets & signed transactions (ECDSA) | ✅ |
+| 4 | Mempool & block assembly | ✅ |
+| 5 | P2P networking & longest-chain rule | ✅ |
 | 6 | CLI wallet & polish | ⬜ |
 
 ## Quickstart
@@ -27,31 +27,46 @@ dotnet run --project MiniChain.Cli
 
 You should see a chain printed, the message `Chain valid? True`, then a tampering simulation that flips it to `Chain valid? False`.
 
-## What's in Weekend 1
+## What's in each weekend
 
-- **`Block`** — index, timestamp, previous hash, transactions, nonce. Immutable except for the nonce (which Weekend 2's miner will need to mutate).
+### Weekend 1 — Blocks, hashing, tamper detection
+- **`Block`** — index, timestamp, previous hash, transactions, nonce. Immutable except for the nonce (which the miner mutates during mining).
 - **Deterministic hashing** — every block produces the same hash on every machine, every runtime, every locale. This sounds trivial but is the source of most "why don't my nodes agree" bugs in real chains.
-- **`Blockchain`** — an ordered list of blocks with `IsValid()` that detects:
-  - tampered transactions in any block,
-  - tampered indexes,
-  - broken `PreviousHash` links,
-  - tampered genesis blocks.
+- **`Blockchain`** — an ordered list of blocks with `IsValid()` that detects tampered transactions, broken hash links, and tampered genesis blocks.
 
-11 unit tests cover the happy path and three distinct tampering scenarios.
+### Weekend 2 — Proof-of-Work mining
+- **`Miner`** — brute-forces a `Nonce` until the block's SHA-256 hash starts with `difficulty` leading hex zeros. Each hex zero = 4 bits of work, so difficulty 4 ≈ 1-in-65536 chance per attempt.
+- **`Blockchain(difficulty)`** — mines every block on `AddBlock` and rejects unmined blocks in `IsValid()`.
+- **`IMiner`** — injected into `Blockchain` so tests can swap in a zero-difficulty miner without waiting for real PoW.
+
+### Weekend 3 — Wallets & signed transactions (ECDSA)
+- **`Wallet`** — generates a P-256 ECDSA key pair. `Sign(data)` produces a hex signature; `PublicKeyHex` is the DER-encoded public key as hex.
+- **`Transaction`** — `From`, `To`, `Amount`, `Signature`. `Sign(wallet)` attaches the sender's signature; `IsValid()` verifies it using the public key in `From` without needing the wallet instance.
+- **`Blockchain.IsValid()`** — extended to reject blocks containing any transaction with an invalid or missing signature.
+- `CultureInfo.InvariantCulture` used throughout the signable payload so amounts hash identically on every locale.
+
+### Weekend 4 — Mempool & block assembly
+- **`Mempool`** — a waiting room for broadcast transactions. `Submit` validates the signature before accepting; `Take(n)` returns the next N pending txs; `Remove` evicts confirmed ones after a block is mined.
+- **`Blockchain.MineFromMempool(mempool, count)`** — pulls from the mempool, mines a block, and cleans up confirmed transactions in one call.
+
+### Weekend 5 — P2P networking & longest-chain rule
+- **`Node`** — wraps a `Blockchain` and holds a list of peer nodes. `Connect(peer)` links nodes; `Broadcast(block)` pushes your chain to all peers after mining; `AcceptChain(chain)` adopts an incoming chain if it is longer and passes `IsValidChain`.
+- **`Blockchain.IsValidChain(chain)`** — validates an external list of blocks using this blockchain's own difficulty and miner, without mutating state.
+- **`Blockchain.ReplaceChain(chain)`** — atomically replaces the internal block list (clear + refill).
+- Longest-chain rule: a node only accepts a peer's chain if it is strictly longer and valid — the same consensus rule Bitcoin uses.
 
 ## Project layout
 
 ```
-MiniChain.Core/    # Block, Blockchain, hashing utilities
+MiniChain.Core/
+  Interface/   # IBlock, IBlockchain, ITransaction, IWallet, IMiner, IMempool, INode
+  Models/      # Transaction
+  Services/    # Block, Blockchain, Miner, Wallet, Mempool, Node
 MiniChain.Cli/     # Demo console app
 MiniChain.Tests/   # Unit tests
 ```
 
-The split between `Core` and `Cli` exists so that Weekend 5's networking project can also reference `Core` without dragging in console-app concerns. Keeping the domain logic free of I/O from day one avoids a painful refactor later.
-
 ## Design notes
-
-A few decisions that came up during Weekend 1 and the reasoning behind each:
 
 **Canonical pipe-delimited serialization for hashing, not JSON.** JSON property ordering isn't guaranteed across runtimes, and a single whitespace difference changes the hash. Two nodes hashing the same logical block must produce byte-identical strings. Bitcoin's serialization is binary and equally strict for the same reason.
 
@@ -59,21 +74,19 @@ A few decisions that came up during Weekend 1 and the reasoning behind each:
 
 **Genesis is hard-coded with a fixed Unix timestamp.** Every node must produce the same genesis block. `DateTimeOffset.UtcNow` would give a different value on every node, and they could never agree on the chain's starting point. Bitcoin hard-codes its genesis too — that's why the embedded "Chancellor on brink…" headline is famous.
 
-**Account-based model (planned for Weekend 3), not UTXO.** Simpler to reason about, easier to debug. Ethereum took the same path for similar reasons.
+**`Transaction.IsValid()` verifies without the wallet.** The public key is embedded in `From` as a DER-encoded hex string. Any node can verify any transaction without storing key material — the same property that makes Bitcoin's UTXO model work.
+
+**`IMiner` is injected into `Blockchain`.** This lets tests pass a zero-difficulty miner to skip PoW entirely, keeping the test suite fast without compromising the real mining logic.
 
 **Numeric formatting uses `CultureInfo.InvariantCulture` everywhere.** Default `ToString()` on numbers respects the system locale — `1234.5` becomes `"1234,5"` on a German machine. That's a hash-breaker waiting to happen. Invariant culture sidesteps the entire problem.
 
 ## What's deliberately not in scope
-
-To keep each weekend finishable, the following are explicitly out of scope for v1:
 
 - Smart contracts and a VM (large enough to be its own project)
 - Merkle trees (a nice-to-have optimization; can be added in a later PR)
 - Proof-of-Stake (interesting but doubles the project)
 - Persistent peer discovery and NAT traversal (localhost suffices)
 - Persistence (in-memory chain only; comes later if at all)
-
-Each of these is a great follow-up. None of them are necessary to learn the core ideas.
 
 ## Tests
 
@@ -82,11 +95,12 @@ dotnet test
 ```
 
 The test suite covers:
-- Block-level: hash determinism, sensitivity to every field, hex format, genesis reproducibility
-- Chain-level: initial state, correct linking on append, valid-chain happy path
-- Tampering: middle-block transaction tamper, broken `PreviousHash` link, tampered genesis
-
-The tampering tests use reflection to mutate the private `_blocks` list, simulating what an attacker who'd modified the on-disk chain would produce. The public API doesn't allow this kind of mutation — that's the point.
+- Block-level: hash determinism, tamper detection, genesis reproducibility
+- Chain-level: linking, validity, PoW enforcement
+- Miner: correct leading zeros, idempotency
+- Wallet & transactions: signing, verification, rejection of unsigned txs
+- Mempool: submit validation, take, remove, integration with `MineFromMempool`
+- Node: broadcast propagation, chain acceptance, rejection of shorter/invalid chains
 
 ## License
 

@@ -9,4 +9,6 @@ public interface IBlockchain
     public IBlock AddBlock(IReadOnlyList<ITransaction> transactions);
     public bool IsValid();
     public IBlock MineFromMempool(IMempool mempool, int count);
+    public void ReplaceChain(IReadOnlyList<IBlock> chain);
+    public bool IsValidChain(IReadOnlyList<IBlock> chain);
 }

@@ -25,6 +25,15 @@ public sealed class Blockchain(int difficulty = 3, IMiner? miner = null) : IBloc
         _blocks.Add(newBlock);
         return _blocks.Last();
     }
+    
+    public void ReplaceChain(IReadOnlyList<IBlock> chain)
+    {
+        _blocks.Clear();
+        foreach(var block in chain)
+        {
+            _blocks.AddRange(block);
+        }
+    }
 
     public bool IsValid()
     {
@@ -36,6 +45,7 @@ public sealed class Blockchain(int difficulty = 3, IMiner? miner = null) : IBloc
         var expectedGenesisHash = Block.CreateGenesis().ComputeHash();
         if (_blocks[0].ComputeHash() != expectedGenesisHash)
         {
+             Console.WriteLine("FAIL: genesis hash");
             return false;
         }
 
@@ -53,6 +63,35 @@ public sealed class Blockchain(int difficulty = 3, IMiner? miner = null) : IBloc
             if (current.Transactions.Any(t => !t.IsValid())) return false;
         }
         
+        return true;
+    }
+    
+    public bool IsValidChain(IReadOnlyList<IBlock> chain)
+    {
+        if (chain.Count == 0)
+        {
+            return false;
+        }
+        
+        var expectedGenesisHash = Block.CreateGenesis().ComputeHash();
+        if (chain[0].ComputeHash() != expectedGenesisHash)
+        {
+            return false;
+        }
+        
+        for (var i = 1; i < chain.Count; ++i)
+        {
+            var current = chain[i];
+            var previous = chain[i - 1];
+            
+            if (current.Index != i)
+            {
+                return false;
+            }
+            if (current.PreviousHash != previous.ComputeHash()) return false;
+            if (!_miner.MeetsTarget(current.ComputeHash(), Difficulty)) return false;
+            if (current.Transactions.Any(t => !t.IsValid())) return false;
+        }
         return true;
     }
     

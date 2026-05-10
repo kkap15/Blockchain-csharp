@@ -31,5 +31,5 @@ public sealed class Block(int index, DateTimeOffset timestamp, string previousHa
     }
 
     public override string ToString()
-    => $"Block #{Index} [{ComputeHash()[..12]}...] prev={PreviousHash[..12]}... tx={Transactions.Count}";
+        => $"Block #{Index} [{ComputeHash()[..12]}...] prev={PreviousHash[..12]}... tx={Transactions.Count}";
 }
