@@ -8,7 +8,8 @@ public interface IBlockchain
     public IBlock Tip { get; }
     public IBlock AddBlock(IReadOnlyList<ITransaction> transactions);
     public bool IsValid();
-    public IBlock MineFromMempool(IMempool mempool, int count);
+    public IBlock MineFromMempool(IMempool mempool, int count, string minerAddress);
     public void ReplaceChain(IReadOnlyList<IBlock> chain);
     public bool IsValidChain(IReadOnlyList<IBlock> chain);
+    public decimal GetBalance(string walletPublicKeyHex);
 }

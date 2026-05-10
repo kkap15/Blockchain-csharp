@@ -9,17 +9,26 @@ public sealed class Mempool : IMempool
 
     public void Remove(IEnumerable<ITransaction> confirmed)
     {
-        _pending.RemoveAll(x => confirmed.Contains(x));
+        _pending.RemoveAll(confirmed.Contains);
     }
 
-    public bool Submit(ITransaction transaction)
+    public bool Submit(ITransaction transaction,  IBlockchain? blockchain = null)
     {
-        if (transaction.IsValid())
+        if (!transaction.IsValid()) return false;
+        if (blockchain is not null)
         {
-            _pending.Add(transaction);
-            return true;
+            if (!transaction.IsCoinbase)
+            {
+                var balance = blockchain.GetBalance(transaction.From);
+                var pendingSpend = _pending
+                    .Where(x => x.From == transaction.From)
+                    .Sum(t => t.Amount);
+                if (balance - pendingSpend < transaction.Amount) return false;
+            }
         }
-        return false;
+        _pending.Add(transaction);
+        
+        return true;
     }
 
     public IReadOnlyList<ITransaction> Take(int count)

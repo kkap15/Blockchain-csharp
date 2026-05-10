@@ -17,7 +17,7 @@ public class NodeTests
         var node2 = new Node(new Blockchain());
         node1.Connect(node2);
 
-        node1.Blockchain.MineFromMempool(mempool, 2);
+        node1.Blockchain.MineFromMempool(mempool, 2, alice.PublicKeyHex);
         node1.Broadcast(node1.Blockchain.Tip);
 
         Assert.Equal(node1.Blockchain.Height, node2.Blockchain.Height);
@@ -35,7 +35,7 @@ public class NodeTests
 
         var node1 = new Node(new Blockchain());
         var node2 = new Node(new Blockchain());
-        node1.Blockchain.MineFromMempool(mempool, 2);
+        node1.Blockchain.MineFromMempool(mempool, 2, bob.PublicKeyHex);
 
         var accepted = node1.AcceptChain(node2.Blockchain.Blocks);
 
@@ -54,7 +54,7 @@ public class NodeTests
 
         var node1 = new Node(new Blockchain());
         var node2 = new Node(new Blockchain());
-        node2.Blockchain.MineFromMempool(mempool, 2);
+        node2.Blockchain.MineFromMempool(mempool, 2, alice.PublicKeyHex);
 
         var tamperedChain = node2.Blockchain.Blocks.ToList();
         tamperedChain[1] = new Block(
@@ -71,7 +71,7 @@ public class NodeTests
 
     private static Transaction SignedTx(Wallet sender, string to, decimal amount)
     {
-        var tx = new Transaction(sender.PublicKeyHex, to, amount);
+        var tx = new Transaction(sender.PublicKeyHex, to, amount, false);
         tx.Sign(sender);
         return tx;
     }

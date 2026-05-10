@@ -13,7 +13,7 @@ This is a 6-weekend project. Each weekend ships a working, demoable milestone. T
 | 3 | Wallets & signed transactions (ECDSA) | ✅ |
 | 4 | Mempool & block assembly | ✅ |
 | 5 | P2P networking & longest-chain rule | ✅ |
-| 6 | CLI wallet & polish | ⬜ |
+| 6 | CLI wallet & polish | ✅ |
 
 ## Quickstart
 
@@ -25,7 +25,7 @@ dotnet test
 dotnet run --project MiniChain.Cli
 ```
 
-You should see a chain printed, the message `Chain valid? True`, then a tampering simulation that flips it to `Chain valid? False`.
+You will be dropped into an interactive CLI. Run `wallet new` to generate a wallet, `mine` to earn your first coins, and `balance` to see your balance. Type `quit` to exit.
 
 ## What's in each weekend
 
@@ -48,6 +48,12 @@ You should see a chain printed, the message `Chain valid? True`, then a tamperin
 ### Weekend 4 — Mempool & block assembly
 - **`Mempool`** — a waiting room for broadcast transactions. `Submit` validates the signature before accepting; `Take(n)` returns the next N pending txs; `Remove` evicts confirmed ones after a block is mined.
 - **`Blockchain.MineFromMempool(mempool, count)`** — pulls from the mempool, mines a block, and cleans up confirmed transactions in one call.
+
+### Weekend 6 — CLI wallet & polish
+- **Wallet persistence** — `ExportPrivateKey()` serializes the P-256 private key to hex; `SaveWallet(path)` writes it to a `WalletFile` JSON record; `LoadWallet(path)` reconstructs the full key pair. Identity survives restarts.
+- **UTXO balance tracking** — `Blockchain.GetBalance(publicKeyHex)` walks every confirmed transaction and computes the net balance. Coinbase transactions (50 coins per block, `From = 0x00…00`) fund the miner and are excluded from the sender deduction path.
+- **Balance-aware mempool** — `Mempool.Submit(tx, blockchain)` rejects transactions where the sender's confirmed balance is less than the amount. Coinbase transactions bypass this check. `Transaction.IsValid()` remains stateless (signature only).
+- **Interactive CLI** — replaces the hardcoded demo with a command loop: `wallet new`, `wallet load`, `balance`, `send <to> <amount>`, `mine`, `chain`, `quit`.
 
 ### Weekend 5 — P2P networking & longest-chain rule
 - **`Node`** — wraps a `Blockchain` and holds a list of peer nodes. `Connect(peer)` links nodes; `Broadcast(block)` pushes your chain to all peers after mining; `AcceptChain(chain)` adopts an incoming chain if it is longer and passes `IsValidChain`.
@@ -86,7 +92,7 @@ MiniChain.Tests/   # Unit tests
 - Merkle trees (a nice-to-have optimization; can be added in a later PR)
 - Proof-of-Stake (interesting but doubles the project)
 - Persistent peer discovery and NAT traversal (localhost suffices)
-- Persistence (in-memory chain only; comes later if at all)
+- Chain persistence (in-memory only; wallet identity persists via JSON but the chain resets on restart)
 
 ## Tests
 
@@ -99,8 +105,9 @@ The test suite covers:
 - Chain-level: linking, validity, PoW enforcement
 - Miner: correct leading zeros, idempotency
 - Wallet & transactions: signing, verification, rejection of unsigned txs
-- Mempool: submit validation, take, remove, integration with `MineFromMempool`
+- Mempool: submit validation, take, remove, integration with `MineFromMempool`, underfunded rejection, funded acceptance after coinbase
 - Node: broadcast propagation, chain acceptance, rejection of shorter/invalid chains
+- Wallet: export/import round-trip, save/load from JSON
 
 ## License
 

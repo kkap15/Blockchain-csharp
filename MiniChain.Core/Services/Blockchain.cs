@@ -93,13 +93,34 @@ public sealed class Blockchain(int difficulty = 3, IMiner? miner = null) : IBloc
         }
         return true;
     }
-    
-    public IBlock MineFromMempool(IMempool mempool, int count)
+
+    public IBlock MineFromMempool(IMempool mempool, int count, string minerAddress)
     {
-        var transactions = mempool.Take(count);
+        var coinBaseTransaction = new Transaction(new string('0', 64), minerAddress, 50m, true);
+        var transactions = new List<ITransaction>{ coinBaseTransaction };
+        transactions.AddRange(mempool.Take(count));
         var block = AddBlock(transactions);
         mempool.Remove(block.Transactions);
-        
+
         return block;
+    }
+
+    public decimal GetBalance(string walletPublicKeyHex)
+    {
+        var total = 0m;
+        foreach (var transaction in _blocks.Select(block => block.Transactions).SelectMany(transactions => transactions))
+        {
+            if (transaction.To == walletPublicKeyHex)
+            {
+                total += transaction.Amount;
+            }
+
+            if (transaction.From == walletPublicKeyHex)
+            {
+                total -=  transaction.Amount;
+            }
+        }
+        
+        return total;
     }
 }

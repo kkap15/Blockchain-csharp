@@ -27,7 +27,7 @@ public sealed class Block(int index, DateTimeOffset timestamp, string previousHa
     
     public static Block CreateGenesis()
     {
-        return new Block(0, DateTimeOffset.FromUnixTimeSeconds(1_700_000_000), new string('0', 64), [new Transaction(new string('0', 64), "genesis-reward", 50m)]);
+        return new Block(0, DateTimeOffset.FromUnixTimeSeconds(1_700_000_000), new string('0', 64), [new Transaction(new string('0', 64), "genesis-reward", 50m, true)]);
     }
 
     public override string ToString()

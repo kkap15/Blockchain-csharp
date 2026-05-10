@@ -97,7 +97,7 @@ public class BlockchainTests
     
     private static Transaction SignedTx(Wallet sender, string to, decimal amount)
     {
-        var tx = new Transaction(sender.PublicKeyHex, to, amount);
+        var tx = new Transaction(sender.PublicKeyHex, to, amount, false);
         tx.Sign(sender);
         return tx;
     }

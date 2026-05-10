@@ -9,4 +9,5 @@ public interface ITransaction
     public string SignablePayload();
     public void Sign(IWallet wallet);
     public bool IsValid();
+    public bool IsCoinbase { get; }
 }

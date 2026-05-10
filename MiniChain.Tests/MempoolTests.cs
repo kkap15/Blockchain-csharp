@@ -21,7 +21,7 @@ public class MempoolTests
         var wallet1 = new Wallet();
         var mempool = new Mempool();
         
-        Assert.False(mempool.Submit(new Transaction(wallet1.PublicKeyHex, "invalid-transaction", 10)));
+        Assert.False(mempool.Submit(new Transaction(wallet1.PublicKeyHex, "invalid-transaction", 10, false)));
         Assert.Empty(mempool.Pending);
     }
     
@@ -68,15 +68,56 @@ public class MempoolTests
         mempool.Submit(SignedTx(wallet1, wallet2.PublicKeyHex, 12));
         
         var blockchain = new Blockchain();
-        blockchain.MineFromMempool(mempool, 2);
+        blockchain.MineFromMempool(mempool, 2, wallet1.PublicKeyHex);
         
         Assert.Equal(1, blockchain.Height);
         Assert.Single(mempool.Pending);
     }
     
+    [Fact]
+    public void Submit_UnderfundedTransaction_ReturnsFalseWhenBlockchainProvided()
+    {
+        var sender = new Wallet();
+        var receiver = new Wallet();
+        var mempool = new Mempool();
+        var blockchain = new Blockchain(0);
+
+        Assert.False(mempool.Submit(SignedTx(sender, receiver.PublicKeyHex, 10), blockchain));
+        Assert.Empty(mempool.Pending);
+    }
+
+    [Fact]
+    public void Submit_FundedTransaction_ReturnsTrueAfterCoinbaseReceived()
+    {
+        var sender = new Wallet();
+        var receiver = new Wallet();
+        var mempool = new Mempool();
+        var blockchain = new Blockchain(0);
+
+        blockchain.MineFromMempool(mempool, 0, sender.PublicKeyHex);
+
+        Assert.True(mempool.Submit(SignedTx(sender, receiver.PublicKeyHex, 10), blockchain));
+        Assert.Single(mempool.Pending);
+    }
+
+    [Fact]
+    public void Submit_PendingSpendPreventsDoubleSpend()
+    {
+        var sender = new Wallet();
+        var receiver = new Wallet();
+        var mempool = new Mempool();
+        var blockchain = new Blockchain(0);
+
+        blockchain.MineFromMempool(mempool, 0, sender.PublicKeyHex);
+
+        Assert.True(mempool.Submit(SignedTx(sender, receiver.PublicKeyHex, 40), blockchain));
+        Assert.False(mempool.Submit(SignedTx(sender, receiver.PublicKeyHex, 40), blockchain));
+        Assert.Single(mempool.Pending);
+    }
+
     private static Transaction SignedTx(Wallet sender, string to, decimal amount)
     {
-        var tx = new Transaction(sender.PublicKeyHex, to, amount);
+        var tx = new Transaction(sender.PublicKeyHex, to, amount, false);
         tx.Sign(sender);
         return tx;
     }

@@ -5,12 +5,13 @@ using MiniChain.Core.Interface;
 
 namespace MiniChain.Core.Services;
 
-public sealed class Transaction(string from, string to, decimal amount, string signature = "") : ITransaction
+public sealed class Transaction(string from, string to, decimal amount, bool isCoinbase, string signature = "") : ITransaction
 {
     public string From => from;
     public string To => to;
     public decimal Amount => amount;
     public string Signature { get; private set; } = signature;
+    public bool IsCoinbase { get; } = isCoinbase;
 
     public string SignablePayload()
     {
@@ -24,14 +25,13 @@ public sealed class Transaction(string from, string to, decimal amount, string s
     
     public bool IsValid()
     {
+        if (IsCoinbase) return true;
+         
         var dataBytes = Encoding.UTF8.GetBytes(SignablePayload());
         var signatureBytes = Convert.FromHexString(Signature);
         using var ecdsaInstance = ECDsa.Create();
         ecdsaInstance.ImportSubjectPublicKeyInfo(Convert.FromHexString(From), out _);
-        if (!ecdsaInstance.VerifyData(dataBytes, signatureBytes, HashAlgorithmName.SHA256))
-        {
-            return false;
-        }
-        return true;
+        
+        return ecdsaInstance.VerifyData(dataBytes, signatureBytes, HashAlgorithmName.SHA256);
     }
 }
