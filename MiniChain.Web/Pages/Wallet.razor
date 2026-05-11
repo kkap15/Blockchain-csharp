@@ -17,19 +17,19 @@ else
     <p>Available: <strong>@Available()</strong></p>
 
     <h3>Send</h3>
-    <input @bind="SendTo" placeholder="Recipient public key" style="width: 400px;" />
-    <input @bind="SendAmount" placeholder="Amount" type="number" />
+    <input @bind="_sendTo" placeholder="Recipient public key" style="width: 400px;" />
+    <input @bind="_sendAmount" placeholder="Amount" type="number" />
     <button @onclick="Send">Send</button>
-    @if (!string.IsNullOrEmpty(SendMessage))
+    @if (!string.IsNullOrEmpty(_sendMessage))
     {
-        <p>@SendMessage</p>
+        <p>@_sendMessage</p>
     }
 }
 
 @code {
-    private string SendTo = "";
-    private decimal SendAmount;
-    private string SendMessage = "";
+    private string _sendTo = "";
+    private decimal _sendAmount;
+    private string _sendMessage = "";
 
     private void CreateWallet()
     {
@@ -42,10 +42,15 @@ else
     private void Send()
     {
         if (ChainService.Wallet is null) return;
-        var tx = new Transaction(ChainService.Wallet.PublicKeyHex, SendTo, SendAmount, false);
+        if (_sendAmount <= 0 || string.IsNullOrWhiteSpace(_sendTo))
+        {
+            _sendMessage = "Enter a recipient and an amount greater than 0";
+            return;
+        }
+        var tx = new Transaction(ChainService.Wallet.PublicKeyHex, _sendTo, _sendAmount, false);
         tx.Sign(ChainService.Wallet);
-        SendMessage = ChainService.Mempool.Submit(tx, ChainService.Blockchain)
-            ? $"Accepted: {SendAmount} queued to {SendTo[..Math.Min(12, SendTo.Length)]}..."
+        _sendMessage = ChainService.Mempool.Submit(tx, ChainService.Blockchain)
+            ? $"Accepted: {_sendAmount} queued to {_sendTo[..Math.Min(12, _sendTo.Length)]}..."
             : "Rejected: insufficient balance or invalid transaction.";
         ChainService.NotifyStateChanged();
     }

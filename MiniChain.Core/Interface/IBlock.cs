@@ -9,4 +9,5 @@ public interface IBlock
     public long Nonce { get; set; }
     public string ComputeHash();
     public string ToString();
+    public string MerkleRoot { get; }
 }
