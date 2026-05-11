@@ -4,7 +4,7 @@ A blockchain built from scratch in C# / .NET 10 — for learning, not production
 
 Most "build a blockchain" tutorials are in Python or JavaScript. This one's in C#, partly because it's a language I work in daily and partly because there's surprisingly little material out there for the .NET crowd. The goal is to understand the primitives — hashing, linked blocks, proof-of-work, signed transactions, P2P consensus — by building each one by hand rather than reading about them.
 
-This is a 6-weekend project. Each weekend ships a working, demoable milestone. The current state of the chain is reflected in the table below.
+This is a 7-weekend project. Each weekend ships a working, demoable milestone. The current state of the chain is reflected in the table below.
 
 | Weekend | Milestone | Status |
 |---:|---|---|
@@ -14,6 +14,7 @@ This is a 6-weekend project. Each weekend ships a working, demoable milestone. T
 | 4 | Mempool & block assembly | ✅ |
 | 5 | P2P networking & longest-chain rule | ✅ |
 | 6 | CLI wallet & polish | ✅ |
+| 7 | SQLite persistence & Blazor frontend | ✅ |
 
 ## Quickstart
 
@@ -63,6 +64,13 @@ Open the URL shown in the terminal. Create a wallet, mine blocks, send transacti
 - **Balance-aware mempool** — `Mempool.Submit(tx, blockchain)` rejects transactions where the sender's confirmed balance is less than the amount. Coinbase transactions bypass this check. `Transaction.IsValid()` remains stateless (signature only).
 - **Interactive CLI** — replaces the hardcoded demo with a command loop: `wallet new`, `wallet load`, `balance`, `send <to> <amount>`, `mine`, `chain`, `quit`.
 
+### Weekend 7 — SQLite persistence & Blazor frontend
+- **SQLite persistence** — blocks are saved to `minichain.db` (via EF Core) after every mine and reloaded on startup. `ChainRepository` maps between domain objects (`Block`, `Transaction`) and EF entities (`BlockEntity`, `TransactionEntity`). The chain survives server restarts.
+- **Wallet auto-load** — `wallet.json` is loaded automatically on startup so the active wallet also survives restarts.
+- **Blazor Server frontend** — four pages: Dashboard (chain stats + mine button), Chain Explorer (all blocks and transactions), Wallet (create, balance, send), Mempool (pending transactions + mine). All pages share live state via `ChainService` and update in real time via SignalR.
+- **Async mining** — PoW runs on a thread pool thread so the UI stays responsive during mining. A "Mining..." button state gives visual feedback.
+- **`ChainService`** implements `IHostedService` so chain and wallet are loaded before the first page renders.
+
 ### Weekend 5 — P2P networking & longest-chain rule
 - **`Node`** — wraps a `Blockchain` and holds a list of peer nodes. `Connect(peer)` links nodes; `Broadcast(block)` pushes your chain to all peers after mining; `AcceptChain(chain)` adopts an incoming chain if it is longer and passes `IsValidChain`.
 - **`Blockchain.IsValidChain(chain)`** — validates an external list of blocks using this blockchain's own difficulty and miner, without mutating state.
@@ -101,7 +109,7 @@ MiniChain.Tests/   # Unit tests
 - Merkle trees (a nice-to-have optimization; can be added in a later PR)
 - Proof-of-Stake (interesting but doubles the project)
 - Persistent peer discovery and NAT traversal (localhost suffices)
-- Chain persistence (in-memory only; wallet identity persists via JSON but the chain resets on restart)
+- Merkle trees for transaction hashing (nice-to-have optimization)
 
 ## Tests
 

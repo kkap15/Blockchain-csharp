@@ -33,7 +33,9 @@ else
 
     private void CreateWallet()
     {
-        ChainService.Wallet = new MiniChain.Core.Services.Wallet();
+        var w = new MiniChain.Core.Services.Wallet();
+        w.SaveWallet("wallet.json");
+        ChainService.Wallet = w;
         ChainService.NotifyStateChanged();
     }
 

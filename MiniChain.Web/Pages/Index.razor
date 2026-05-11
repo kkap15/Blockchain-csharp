@@ -8,24 +8,30 @@
   <p>Tip: <strong>@Chain.Blockchain.Tip.ComputeHash()[..12]...</strong></p>                                                                                                                                                       
   <p>Valid: <strong>@Chain.Blockchain.IsValid()</strong></p>                                                                                                                                                                        
    
-  <button @onclick="Mine">Mine Block</button>                                                                                                                                                                                       
+  <button @onclick="Mine" disabled="@_mining">
+      @(_mining ? "Mining" : "Mine Block")
+  </button>                                                                                                                                                                                       
                                                                                                                                                                                                                                   
   @if (Chain.Wallet is null)                                                                                                                                                                                                        
   {                                                     
-      <p>No wallet loaded — go to <a href="wallet">Wallet</a> to create one.</p>
+      <p>No wallet loaded — go to <a href="/wallet">Wallet</a> to create one.</p>
   }                                                                                                                                                                                                                                 
    
-  @code {                                                                                                                                                                                                                           
+  @code {
+      private bool _mining;
+      
       protected override void OnInitialized()           
       {                                                                                                                                                                                                                             
           Chain.OnChange += Refresh;                    
       }
 
-      private void Mine()                                                                                                                                                                                                           
+      private async Task Mine()                                                                                                                                                                                                           
       {
-          if (Chain.Wallet is null) return;                                                                                                                                                                                         
-          Chain.Blockchain.MineFromMempool(Chain.Mempool, Chain.Mempool.Pending.Count, Chain.Wallet.PublicKeyHex);
-          Chain.NotifyStateChanged();                                                                                                                                                                                               
+          if (Chain.Wallet is null) return;    
+          _mining =  true;
+          await Chain.MineBlockAsync(Chain.Wallet.PublicKeyHex);
+          Chain.NotifyStateChanged();       
+          _mining = false;
       }                                                                                                                                                                                                                             
                                                                                                                                                                                                                                     
       private void Refresh() => InvokeAsync(StateHasChanged);                                                                                                                                                                       

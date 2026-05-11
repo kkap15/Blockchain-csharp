@@ -27,5 +27,10 @@ Thumbs.db
 # Wallet persistence
 wallet.json
 
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+
 # Claude
 .claude/

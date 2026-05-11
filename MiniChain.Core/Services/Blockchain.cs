@@ -31,7 +31,7 @@ public sealed class Blockchain(int difficulty = 3, IMiner? miner = null) : IBloc
         _blocks.Clear();
         foreach(var block in chain)
         {
-            _blocks.AddRange(block);
+            _blocks.Add(block);
         }
     }
 

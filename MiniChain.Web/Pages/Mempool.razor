@@ -31,22 +31,23 @@ else
 }
 @if (ChainService.Wallet is not null)
 {
-    <button @onclick="Mine">Mine Block</button>
+    <button @onclick="Mine" disabled="@_mining">
+        @(_mining ? "Mining" : "Mine Block")
+    </button>
 }                                                                                                                                                                                                                                 
 else
 {                                                                                                                                                                                                                                 
     <p>Create a wallet first to mine.</p>                
 }
 @code {
-
-    private void Mine()
+    private bool _mining;
+    private async Task Mine()
     {
         if (ChainService.Wallet is null) return;
-        ChainService.Blockchain.MineFromMempool(
-            ChainService.Mempool,                                                                                                                                                                                                 
-            ChainService.Mempool.Pending.Count,
-            ChainService.Wallet.PublicKeyHex);                                                                                                                                                                                    
+        _mining = true; 
+        await ChainService.MineBlockAsync(ChainService.Wallet.PublicKeyHex);                                                                                                                                                                                    
         ChainService.NotifyStateChanged();
+        _mining = false;
     }
 
     protected override void OnInitialized() => ChainService.OnChange += Refresh;
